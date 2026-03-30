@@ -1,0 +1,99 @@
+"""
+Shadow Guard – Prompt Injection Protection Middleware
+─────────────────────────────────────────────────────
+Scans all incoming POST data for prompt injection patterns.
+Blocks requests that try to manipulate the AI pipeline.
+"""
+
+import re
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.requests import Request
+from starlette.responses import JSONResponse
+
+
+INJECTION_PATTERNS = [
+    r"ignore (previous|all|prior|above) instructions",
+    r"forget (everything|all|your instructions|your rules)",
+    r"you are now",
+    r"act as (a|an|if)",
+    r"pretend (you are|to be)",
+    r"disregard (your|all|previous)",
+    r"new persona",
+    r"jailbreak",
+    r"dan mode",
+    r"developer mode",
+    r"(reveal|show|print|output) (your|the) (system|initial) prompt",
+    r"<\|.*?\|>",
+    r"\[INST\]",
+    r"\[SYSTEM\]",
+    r"###\s*(instruction|system|human|assistant)",
+    r"ignore safety",
+    r"bypass (filter|guard|safety|security)",
+    r"do not (filter|censor|moderate|block)",
+]
+
+COMPILED = [re.compile(p, re.IGNORECASE) for p in INJECTION_PATTERNS]
+
+
+def detect_injection(text: str) -> str | None:
+    """Returns the matched pattern string or None."""
+    for pattern in COMPILED:
+        m = pattern.search(text)
+        if m:
+            return m.group()
+    return None
+
+
+class ShadowGuardMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        if request.method != "POST":
+            return await call_next(request)
+
+        content_type = request.headers.get("content-type", "")
+
+        if "form" in content_type or "multipart" in content_type:
+            try:
+                form = await request.form()
+                for key, value in form.items():
+                    if isinstance(value, str):
+                        match = detect_injection(value)
+                        if match:
+                            return JSONResponse(status_code=400, content={
+                                "error": "Shadow Guard blocked this request.",
+                                "reason": f"Prompt injection detected in '{key}': '{match}'",
+                                "threat_level": "CRITICAL",
+                            })
+            except Exception:
+                pass
+
+        elif "json" in content_type:
+            try:
+                body = await request.json()
+                flagged = _scan_json(body)
+                if flagged:
+                    return JSONResponse(status_code=400, content={
+                        "error": "Shadow Guard blocked this request.",
+                        "reason": f"Prompt injection detected at: {flagged}",
+                        "threat_level": "CRITICAL",
+                    })
+            except Exception:
+                pass
+
+        return await call_next(request)
+
+
+def _scan_json(obj, path="root") -> str | None:
+    if isinstance(obj, str):
+        if detect_injection(obj):
+            return path
+    elif isinstance(obj, dict):
+        for k, v in obj.items():
+            result = _scan_json(v, f"{path}.{k}")
+            if result:
+                return result
+    elif isinstance(obj, list):
+        for i, item in enumerate(obj):
+            result = _scan_json(item, f"{path}[{i}]")
+            if result:
+                return result
+    return None
