@@ -7,6 +7,8 @@ Multi-source input → Central Classifier → Risk Scoring → Human Feedback Lo
 
 import uuid
 from contextlib import asynccontextmanager
+from dotenv import load_dotenv
+load_dotenv()
 
 import uvicorn
 from fastapi import FastAPI, Request, UploadFile, File, Form, Query
@@ -25,6 +27,7 @@ from detectors.url_detector import URLDetector
 from detectors.voice_detector import VoiceDetector
 from detectors.file_detector import FileDetector
 from detectors.email_detector import EmailDetector, IMAPFetcher
+from detectors.video_detector import VideoDetector
 
 
 # ── Startup ─────────────────────────────────────────────────────────────────
@@ -106,6 +109,16 @@ async def analyze_voice(request: Request, audio: UploadFile = File(...)):
     audio_bytes = await audio.read()
     detector = VoiceDetector(vector_db=request.app.state.vector_db)
     result = detector.analyze(audio_bytes, audio.filename)
+    result["analysis_id"] = str(uuid.uuid4())[:8]
+    return result
+
+
+@app.post("/analyze/video")
+async def analyze_video(video: UploadFile = File(...)):
+    """Video deepfake detection — temporal consistency + facial artifacts + AV sync."""
+    video_bytes = await video.read()
+    detector = VideoDetector()
+    result = detector.analyze(video_bytes, video.filename)
     result["analysis_id"] = str(uuid.uuid4())[:8]
     return result
 

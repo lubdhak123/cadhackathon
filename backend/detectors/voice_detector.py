@@ -189,6 +189,19 @@ SCAM_PHRASES = [
     "bail chahiye", "naya number hai mera", "phone kho gaya",
     "kisi ko mat batana", "please help karo", "emergency hai",
     "ghar pe kisi ko mat batana", "abhi transfer karo",
+
+    # Devanagari — Whisper outputs native script for Hindi audio
+    "ओटीपी", "ओटीपी बताओ", "ओटीपी शेयर करो", "ओटीपी दो",
+    "आधार", "आधार नंबर", "पैन कार्ड",
+    "बैंक अकाउंट", "खाता बंद", "खाता ब्लॉक", "अकाउंट सस्पेंड",
+    "पैसे ट्रांसफर करो", "अभी ट्रांसफर करो", "तुरंत करो",
+    "पुलिस आ जाएगी", "गिरफ्तारी होगी", "केस दर्ज",
+    "केवाईसी", "केवाईसी अपडेट", "केवाईसी वेरीफाई",
+    "कस्टम विभाग", "पार्सल", "लॉटरी", "इनाम",
+    "किसी को मत बताना", "लाइन पे रहो", "फोन मत काटना",
+    "डिजिटल अरेस्ट", "साइबर क्राइम",
+    "मुसीबत में हूं", "पैसों की जरूरत है", "एक्सीडेंट हो गया",
+    "बेल चाहिए", "नया नंबर है", "इमरजेंसी है",
 ]
 
 URGENCY_PHRASES = [
@@ -199,6 +212,10 @@ URGENCY_PHRASES = [
     "abhi karo", "turant karo", "jaldi karo", "ek ghante mein",
     "aaj hi", "der mat karo", "phone mat katna", "line pe raho",
     "warna action liya jayega", "warna case hoga",
+    # Devanagari urgency
+    "अभी करो", "तुरंत करो", "जल्दी करो", "एक घंटे में",
+    "आज ही", "देर मत करो", "फोन मत काटना", "लाइन पे रहो",
+    "वरना एक्शन", "वरना केस होगा", "अभी नहीं तो",
 ]
 
 
@@ -262,14 +279,162 @@ def nlp_on_transcript(transcript: str, vector_db: VectorDB = None) -> Tuple[floa
     # ── Keyword baseline with urgency multiplier ────────────────────────────
     # Weighted scores per keyword — higher risk phrases score more
     SCAM_WEIGHTS = {
+        # ── English: OTP / Credentials (highest risk) ──────────────────────
         "otp": 40, "one time password": 40, "share your otp": 40,
-        "cvv": 35, "aadhaar": 35, "aadhar": 35, "pan card": 30,
-        "anydesk": 30, "teamviewer": 30, "remote access": 30,
-        "pin number": 25, "screen share": 25,
-        "bank account": 20, "credit card": 20, "debit card": 20,
-        "password": 20, "arrested": 20, "digital arrest": 20,
-        "police": 15, "verify": 15, "blocked": 15, "suspended": 15,
-        "refund": 10, "kyc": 15, "warrant": 20,
+        "enter your otp": 40, "give me your otp": 40, "read your otp": 40,
+        "cvv": 40, "cvv number": 40, "card number": 40, "card details": 40,
+        "card verification": 40, "security code": 35,
+        "bank details": 40, "account details": 40, "forward your bank": 40,
+        "give your bank details": 40, "share your bank details": 40,
+        "account number": 35, "routing number": 35, "sort code": 35, "ifsc": 30,
+        "aadhaar": 35, "aadhar": 35, "aadhaar number": 40, "aadhaar card": 35,
+        "pan card": 35, "pan number": 35, "pan details": 35,
+        "passport number": 30, "driving licence": 25, "voter id": 25,
+        "anydesk": 40, "teamviewer": 40, "remote access": 40,
+        "screen share": 35, "screen sharing": 35, "remote desktop": 40,
+        "ultraviewer": 40, "airdroid": 35, "quick support": 35,
+        "pin number": 35, "pin code": 35, "atm pin": 40, "atm card": 30,
+        "net banking": 30, "internet banking": 30, "mobile banking": 30,
+        "banking password": 40, "login password": 35, "account password": 35,
+        "upi pin": 40, "upi id": 25, "upi number": 25,
+        "google pay": 20, "phonepe": 20, "paytm": 20, "bhim": 20,
+        "neft": 25, "rtgs": 25, "imps": 25,
+        "username": 25, "user id": 25, "login id": 25,
+
+        # ── English: Impersonation / Authority Threats ──────────────────────
+        "arrested": 25, "arrest": 25, "digital arrest": 40,
+        "warrant": 30, "arrest warrant": 40, "non-bailable warrant": 40,
+        "fir": 25, "fir registered": 30, "case registered": 30,
+        "police": 15, "police officer": 25, "police station": 20,
+        "cbi": 30, "cbi officer": 35, "central bureau": 35,
+        "ib officer": 35, "intelligence bureau": 35,
+        "income tax": 25, "income tax officer": 35, "income tax department": 35,
+        "it department": 25, "it notice": 30, "tax evasion": 35,
+        "enforcement directorate": 35, "ed officer": 35,
+        "rbi": 25, "reserve bank": 25, "rbi governor": 30,
+        "sebi": 25, "trai": 25, "dot": 20,
+        "customs": 20, "customs officer": 30, "customs department": 30,
+        "court notice": 30, "legal notice": 25, "summons": 30,
+        "case filed": 25, "complaint filed": 25, "chargesheet": 30,
+        "money laundering": 35, "hawala": 35,
+        "narcotics": 30, "drug case": 30, "drugs found": 35,
+        "terrorism": 30, "terror funding": 35,
+        "cybercrime": 25, "cyber crime department": 30, "cyber cell": 25,
+        "fraud department": 25, "fraud investigation": 25,
+        "social security": 25, "social security number": 35,
+        "medicare": 20, "irs": 30, "tax refund": 25,
+
+        # ── English: Account Suspension ─────────────────────────────────────
+        "bank account": 20, "account suspended": 30, "account blocked": 30,
+        "account frozen": 30, "account closed": 25, "account deactivated": 25,
+        "account terminated": 25, "account on hold": 25,
+        "kyc": 20, "kyc update": 25, "kyc incomplete": 25, "kyc expired": 25,
+        "kyc verification": 25, "kyc pending": 20,
+        "verify your account": 25, "verify your details": 30,
+        "verify immediately": 35, "verify your identity": 30,
+        "blocked": 15, "suspended": 15, "expired": 15, "deactivated": 20,
+        "sim blocked": 30, "sim suspended": 30, "number blocked": 25,
+        "sim card": 20, "mobile number": 15,
+
+        # ── English: Money Transfer ──────────────────────────────────────────
+        "transfer money": 35, "send money": 35, "wire transfer": 35,
+        "money transfer": 35, "transfer funds": 35, "send funds": 35,
+        "deposit money": 30, "deposit cash": 30, "deposit amount": 30,
+        "gift card": 30, "itunes card": 35, "google play card": 35,
+        "amazon gift card": 35, "steam card": 35, "voucher code": 30,
+        "western union": 35, "money gram": 35, "crypto": 25,
+        "bitcoin": 30, "cryptocurrency": 30, "wallet address": 35,
+        "safe account": 40, "safety account": 40, "secure account": 35,
+        "government account": 35, "rbi account": 40,
+
+        # ── English: Social Engineering / Isolation ──────────────────────────
+        "don't tell anyone": 30, "do not tell anyone": 30,
+        "don't tell your family": 30, "don't tell your wife": 30,
+        "don't tell your husband": 30, "keep this confidential": 25,
+        "keep this secret": 25, "this is confidential": 25,
+        "stay on the line": 20, "don't hang up": 20, "do not hang up": 20,
+        "don't call back": 25, "do not call anyone": 30,
+        "don't contact your bank": 30, "don't go to the bank": 25,
+        "we are monitoring": 20, "your call is being recorded": 15,
+        "this is your last chance": 30, "final warning": 25,
+        "within 24 hours": 25, "within one hour": 30, "within 30 minutes": 35,
+        "immediately": 20, "right now": 20, "urgent": 15, "emergency": 15,
+
+        # ── English: Prize / Lottery / Job Scams ────────────────────────────
+        "lottery": 20, "lucky draw": 20, "prize money": 25,
+        "you have won": 25, "you are selected": 20, "congratulations": 10,
+        "claim your prize": 25, "claim your reward": 25,
+        "processing fee": 25, "registration fee": 20, "advance fee": 30,
+        "job offer": 15, "work from home": 15, "easy money": 20,
+        "investment opportunity": 20, "guaranteed returns": 25,
+        "double your money": 30, "high returns": 20,
+        "refund": 15, "insurance claim": 15, "government scheme": 15, "subsidy": 15,
+        "parcel": 15, "package": 10, "prize": 15,
+
+        # ── English: Family Emergency / Voice Cloning ────────────────────────
+        "i'm in trouble": 30, "i am in trouble": 30,
+        "i had an accident": 35, "i got arrested": 35,
+        "i'm at the police station": 35, "i am at the police station": 35,
+        "i need bail money": 40, "bail money": 40, "bail amount": 35,
+        "don't tell mom": 30, "don't tell dad": 30,
+        "new number": 15, "lost my phone": 15, "i'm in hospital": 30,
+        "send money urgently": 40, "please send money": 35,
+
+        # ── English: Tech Support Scams ──────────────────────────────────────
+        "virus detected": 25, "malware detected": 25, "hacked": 20,
+        "your account is hacked": 30, "microsoft support": 30,
+        "windows support": 30, "apple support": 30,
+        "technical support": 20, "tech support": 20,
+        "overpaid": 20, "accidental transfer": 25,
+        "password": 20, "credit card": 20, "debit card": 20,
+
+        # ── Devanagari: Credentials ──────────────────────────────────────────
+        "ओटीपी": 40, "ओटीपी बताएं": 40, "ओटीपी दीजिए": 40,
+        "पिन": 35, "एटीएम पिन": 40, "पासवर्ड": 35,
+        "आधार": 35, "आधार नंबर": 40, "आधार कार्ड": 35,
+        "पैन कार्ड": 35, "पैन नंबर": 35,
+        "बैंक डिटेल्स": 40, "खाता नंबर": 35, "अकाउंट नंबर": 35,
+        "नेट बैंकिंग": 30, "यूपीआई पिन": 40, "यूपीआई आईडी": 25,
+
+        # ── Devanagari: Impersonation / Threats ─────────────────────────────
+        "सीबीआई": 35, "सीबीआई अधिकारी": 40, "आयकर": 30,
+        "प्रवर्तन निदेशालय": 35, "ईडी": 30,
+        "गिरफ्तार": 30, "गिरफ्तारी": 30, "अरेस्ट": 30, "डिजिटल अरेस्ट": 40,
+        "पुलिस": 20, "पुलिस अधिकारी": 25, "थाना": 20,
+        "केस दर्ज": 25, "एफआईआर": 25, "वारंट": 30,
+        "कोर्ट नोटिस": 30, "कानूनी नोटिस": 25,
+        "मनी लॉन्ड्रिंग": 35, "नशीले पदार्थ": 30,
+        "साइबर क्राइम": 25, "साइबर सेल": 25,
+        "आरबीआई": 25, "रिजर्व बैंक": 25,
+        "ट्राई": 20, "दूरसंचार विभाग": 20,
+
+        # ── Devanagari: Account / Transfer ──────────────────────────────────
+        "बैंक अकाउंट": 20, "खाता बंद": 25, "खाता ब्लॉक": 25,
+        "केवाईसी": 20, "केवाईसी अपडेट": 25, "केवाईसी वेरीफाई": 25,
+        "पैसे ट्रांसफर": 35, "ट्रांसफर करो": 30, "पैसे भेजो": 35,
+        "सुरक्षित खाता": 40, "सेफ अकाउंट": 40,
+        "सिम बंद": 30, "नंबर ब्लॉक": 25,
+
+        # ── Devanagari: Social Engineering ──────────────────────────────────
+        "किसी को मत बताना": 30, "परिवार को मत बताना": 30,
+        "लाइन पे रहो": 20, "फोन मत काटना": 20,
+        "अभी करो": 25, "तुरंत करो": 25, "जल्दी करो": 20,
+        "आखिरी मौका": 30, "अंतिम चेतावनी": 25,
+        "कस्टम": 20, "पार्सल": 15, "इनाम": 15, "लॉटरी": 20,
+        "एसबीआई": 20, "बैंक मैनेजर": 20,
+        "इमरजेंसी": 15, "मुसीबत": 15, "बेल": 20,
+
+        # ── Hinglish (Romanized) ─────────────────────────────────────────────
+        "otp batao": 40, "otp share karo": 40, "otp bata do": 40,
+        "pin batao": 35, "password batao": 35, "details batao": 30,
+        "account band ho jayega": 30, "account block ho jayega": 30,
+        "kyc update karo": 25, "kyc verify karo": 25,
+        "paisa transfer karo": 35, "paise bhejo": 35, "abhi transfer karo": 40,
+        "giraftari hogi": 30, "arrest ho jaoge": 30, "police aa jayegi": 25,
+        "case darj ho gaya": 25, "fir darj": 25,
+        "rbi se call": 25, "cbi se call": 35, "bank manager bol raha hoon": 25,
+        "kisi ko mat batana": 30, "line pe raho": 20, "phone mat katna": 20,
+        "safe account mein transfer": 40, "government account mein daalo": 35,
     }
 
     has_urgency = any(u in lower for u in URGENCY_PHRASES)

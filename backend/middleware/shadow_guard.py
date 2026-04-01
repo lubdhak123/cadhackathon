@@ -51,11 +51,21 @@ class ShadowGuardMiddleware(BaseHTTPMiddleware):
 
         content_type = request.headers.get("content-type", "")
 
-        if "form" in content_type or "multipart" in content_type:
+        if "multipart" in content_type:
+            # Skip body scanning for multipart/form-data (file uploads).
+            # Reading the body here consumes it and breaks FastAPI's UploadFile.
+            # File content is binary — not a prompt injection surface.
+            # Text fields in multipart are scanned by the route handler via Shadow Guard on extracted text.
+            pass
+
+        elif "application/x-www-form-urlencoded" in content_type:
             try:
-                form = await request.form()
-                for key, value in form.items():
-                    if isinstance(value, str):
+                body_bytes = await request.body()
+                from urllib.parse import parse_qs
+                decoded = body_bytes.decode("utf-8", errors="ignore")
+                params = parse_qs(decoded)
+                for key, values in params.items():
+                    for value in values:
                         match = detect_injection(value)
                         if match:
                             return JSONResponse(status_code=400, content={
