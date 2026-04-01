@@ -48,6 +48,49 @@ KNOWN_SCAMS = [
     # ── AI-Generated Phishing (modern) ────────────────────────────
     "As per our records, your account shows suspicious activity. To prevent unauthorized access, please verify your identity by clicking the secure link below. This is an automated security measure.",
     "Dear valued customer, we have detected a login attempt from an unrecognized device. If this was not you, please immediately verify your account to prevent any unauthorized transactions.",
+
+    # ── Voice Call Transcripts — Banking Impersonation ────────────
+    "Hello, I am calling from the fraud department of your bank. We have detected an unauthorized transaction of Rs 45,000 on your account. To stop this transaction, I need you to share your OTP right now.",
+    "Sir, this is an urgent call from SBI customer care. Your account has been flagged for suspicious activity. Please provide your debit card number and CVV so we can verify your identity and secure your account.",
+    "Madam, I am calling from HDFC bank. Your net banking has been temporarily blocked due to multiple failed login attempts. To unlock it immediately, please share the OTP we just sent to your registered mobile number.",
+    "This is a call from the RBI cyber fraud helpline. We have identified that your account is being misused. You need to transfer your funds to a secure government account immediately. I will guide you through the process.",
+    "Hello, your credit card ending in 4567 has been used for a transaction of Rs 12,000 at an unknown merchant. If you did not authorize this, press 1 and share your card details to block it immediately.",
+
+    # ── Voice Call Transcripts — Government Impersonation ─────────
+    "I am calling from the Income Tax Department of India. Our records show you have tax dues of Rs 80,000. If you do not pay within the next two hours, a warrant will be issued for your arrest. Call back immediately on this number.",
+    "This is the Narcotics Control Bureau. Your Aadhaar number has been linked to illegal drug shipments. You are under digital arrest. Do not leave your home and do not speak to anyone until our officer arrives.",
+    "Hello, I am Officer Singh from the CBI cyber crime branch. We have found your bank account is being used for money laundering. To cooperate with our investigation, transfer your savings to this safe account number we provide.",
+    "This call is from TRAI, the Telecom Regulatory Authority. We have received complaints against your mobile number for sending fraudulent messages. Your number will be disconnected in two hours unless you verify your Aadhaar details.",
+    "I am calling from the customs department. A parcel in your name containing foreign currency and drugs has been seized at the airport. To avoid arrest, you must pay a clearance fine of Rs 25,000 immediately.",
+
+    # ── Voice Call Transcripts — Tech Support Scam ────────────────
+    "Hello, I am calling from Microsoft Windows support team. Our system has detected that your computer is sending error reports and is infected with a dangerous virus. Please allow me remote access using TeamViewer so I can fix it for free.",
+    "This is an automated alert from Apple. Your iCloud account has been compromised and someone is trying to steal your photos and data. Press 1 to speak with an Apple certified technician immediately.",
+    "Hi, I am calling from your internet service provider. We have detected unusual activity from your IP address indicating your router has been hacked. I need to remotely access your computer to fix this security breach.",
+
+    # ── Voice Call Transcripts — KYC / UPI Scam ──────────────────
+    "Hello, I am calling from Google Pay support. Your UPI ID has been flagged and will be deactivated in 24 hours if you do not complete your KYC verification. Please share your Aadhaar number and the OTP you receive.",
+    "This is PhonePe customer support. We are upgrading all accounts and your KYC documents are outdated. To continue using our service, please share your PAN card number and bank account details for re-verification.",
+    "I am calling from Paytm. Your wallet has crossed the KYC limit. To continue transacting, share your Aadhaar OTP for instant verification. This is mandatory as per RBI guidelines.",
+
+    # ── Voice Call Transcripts — Loan / Job Scam ──────────────────
+    "Congratulations! You have been pre-approved for an instant personal loan of Rs 5 lakhs at just 1% interest. To process your loan within 30 minutes, pay a refundable processing fee of Rs 3,000 to our account.",
+    "Hello, we are hiring work from home employees. You can earn Rs 800 per hour just by liking videos and completing simple tasks. To register, pay a one-time registration fee of Rs 1,500.",
+
+    # ── Voice Call Transcripts — Hindi / Hinglish ─────────────────
+    "Namaste, main aapke bank ki fraud prevention team se bol raha hoon. Aapke account mein ek suspicious transaction detect hui hai. Aapka account block hone se bachane ke liye abhi apna OTP share karein.",
+    "Bhai sahab, main CBI officer bol raha hoon. Aapke naam pe ek illegal parcel pakda gaya hai. Agar arrest nahi chahte toh abhi is number pe Rs 50,000 transfer karein aur kisi ko mat batana.",
+    "Madam ji, aapka SIM card agle 2 ghante mein band ho jayega. TRAI ka notice hai. Aadhaar card number aur OTP share karein turant warna number permanently block ho jayega.",
+    "Hello sir, main Amazon delivery agent bol raha hoon. Aapka parcel customs mein atak gaya hai. Sirf Rs 1,500 ka customs duty bharna hoga. UPI pe bhej dijiye abhi.",
+    "Aapne lucky draw jeeta hai. Ek crore rupaye aur ek car aapki prize hai. Claim karne ke liye apna bank account number aur Aadhaar details abhi WhatsApp karein is number pe.",
+
+    # ── Voice Cloning — Family Emergency Impersonation ────────────
+    "Mom it's me, I'm calling from a new number, I dropped my phone in water. I had a car accident and I'm at the police station. I need Rs 50,000 for bail right now. Please don't tell Dad yet, just transfer the money first.",
+    "Dad this is your son. Please don't panic. I got into some trouble and I'm at the police station. My phone broke so I'm calling from a friend's number. I need bail money urgently, please send Rs 30,000 right now and don't tell anyone.",
+    "Beta main bol raha hoon, mera phone kho gaya isliye naye number se call kar raha hoon. Main hospital mein hoon, accident ho gaya tha. Turant Rs 40,000 ki zaroorat hai operation ke liye. Kisi ko mat batana abhi.",
+    "Mummy main hoon, please ghabrana mat. Main police station pe hoon, kuch gadbad ho gayi. Bail ke liye paisa chahiye abhi. Ye number yaad kar lo mera naya number hai. 20,000 bhej do turant please kisi ko mat batana.",
+    "Hello aunty, main aapka beta bol raha hoon. Naye number se call kar raha hoon. Main bahut badi musibat mein hoon. Mujhe abhi 50,000 rupaye chahiye. Please UPI pe transfer kar do aur ghar mein kisi ko mat batana main baad mein explain karunga.",
+    "This is your daughter calling from a colleague's phone. My phone got stolen. I'm stranded and I need money urgently for an emergency. Please transfer Rs 25,000 to this account right now. I'll explain everything later just please hurry.",
 ]
 
 

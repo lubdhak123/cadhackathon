@@ -9,7 +9,7 @@ import uuid
 from contextlib import asynccontextmanager
 
 import uvicorn
-from fastapi import FastAPI, UploadFile, File, Form, Query
+from fastapi import FastAPI, Request, UploadFile, File, Form, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
@@ -101,10 +101,10 @@ async def analyze_url(url: str = Form(...)):
 
 
 @app.post("/analyze/voice")
-async def analyze_voice(audio: UploadFile = File(...)):
+async def analyze_voice(request: Request, audio: UploadFile = File(...)):
     """Acoustic + STT + deepfake voice analysis."""
     audio_bytes = await audio.read()
-    detector = VoiceDetector()
+    detector = VoiceDetector(vector_db=request.app.state.vector_db)
     result = detector.analyze(audio_bytes, audio.filename)
     result["analysis_id"] = str(uuid.uuid4())[:8]
     return result

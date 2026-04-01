@@ -50,7 +50,7 @@ class CentralClassifier:
 
         if audio_bytes:
             from detectors.voice_detector import VoiceDetector
-            voice_det = VoiceDetector()
+            voice_det = VoiceDetector(vector_db=self.vector_db if hasattr(self, 'vector_db') else None)
             results["voice"] = voice_det.analyze(audio_bytes, audio_filename)
 
         if file_bytes:
