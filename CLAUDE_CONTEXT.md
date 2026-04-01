@@ -15,10 +15,17 @@ The project is "Fraud Shield AI," an evolved, superior version of the "Zora AI" 
 1.  **Read the Pitch Deck:** Extracted and fully analyzed `ppt_cad.pdf` using a custom PyMuPDF script. Mapped the 16-slide pitch perfectly against the codebase.
 2.  **Backend Dependencies Setup:** Generated a comprehensive `backend/requirements.txt` encompassing all deep-tech libraries required (FastAPI, `xgboost`, `faster-whisper`, `librosa`, `yara-python`, `playwright`, `chromadb`, etc.).
 3.  **Environment Variables Template:** Generated `backend/.env.example` mapping out Anthropic, IMAP, and VirusTotal keys.
+<<<<<<< HEAD
 4.  **Frontend "WOW" UI Overhaul:** Replaced the basic CSS with a highly premium, dark-mode "glassmorphism" aesthetic in `frontend/src/index.css`.
     *   Added glowing neon cyans (`#00f2fe`) and reds (`#ff2a5f`).
     *   Imported the modern 'Outfit' font.
     *   Added dynamic `backdrop-filter: blur(16px)` to component cards for a true Cybersecurity Command Center vibe.
+=======
+4.  **Frontend "WOW" UI Overhaul:** Replaced the basic CSS with a highly premium, dark-mode "glassmorphism" aesthetic in `frontend/src/index.css`. 
+    *   Added glowing neon cyans (`#00f2fe`) and reds (`#ff2a5f`).
+    *   Imported the modern 'Outfit' font.
+    *   Added dynamic `backdrop-filter: blur(16px)` to component cards for a true Cybersecurity Command Center vibe. 
+>>>>>>> 645ca9558ba883db1fbaa5ae3be7baf1723c142d
     *   Verified that React layout components (like `AnalyzeTab` and `FeedbackTab.jsx`) correctly inherit and deploy this styling.
 
 ## 3. The Live Voice Guard Pipeline (Deep Dive Explanations)
