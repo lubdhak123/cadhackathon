@@ -1,0 +1,12 @@
+fastapi
+uvicorn
+python-multipart
+anthropic
+chromadb
+playwright
+yara-python
+faster-whisper
+librosa
+speechbrain
+xgboost
+python-dotenv
