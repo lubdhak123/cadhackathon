@@ -6,12 +6,13 @@ Multi-source input → Central Classifier → Risk Scoring → Human Feedback Lo
 """
 
 import uuid
+import json
 from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 load_dotenv()
 
 import uvicorn
-from fastapi import FastAPI, Request, UploadFile, File, Form, Query
+from fastapi import FastAPI, Request, UploadFile, File, Form, Query, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
@@ -28,6 +29,8 @@ from detectors.voice_detector import VoiceDetector
 from detectors.file_detector import FileDetector
 from detectors.email_detector import EmailDetector, IMAPFetcher
 from detectors.video_detector import VideoDetector
+from core.live_call import process_chunk, end_call
+from core.twilio_stream import get_or_create_handler, remove_handler
 
 
 # ── Startup ─────────────────────────────────────────────────────────────────
@@ -259,6 +262,135 @@ async def feedback_stats():
 async def recent_feedback(limit: int = Query(default=20)):
     """Get recent feedback entries."""
     return app.state.feedback.get_recent(limit=limit)
+
+
+# ── Live Call WebSocket ──────────────────────────────────────────────────────
+
+@app.websocket("/ws/live-call/{call_id}")
+async def live_call_ws(websocket: WebSocket, call_id: str):
+    """
+    Real-time call analysis via WebSocket.
+
+    Protocol:
+      Client sends: binary audio chunks (5s WAV blobs)
+      Server sends: JSON RiskState updates after each chunk
+      Client sends: text "END" to close call and get final summary
+    """
+    await websocket.accept()
+    vector_db = websocket.app.state.vector_db
+
+    try:
+        while True:
+            message = await websocket.receive()
+
+            # Text message — only "END" is supported
+            if "text" in message:
+                if message["text"].strip().upper() == "END":
+                    state = end_call(call_id)
+                    await websocket.send_text(json.dumps({
+                        "type": "call_ended",
+                        "final_score": round(state.current_score, 1) if state else 0,
+                        "verdict": state.to_dict()["verdict"] if state else "UNKNOWN",
+                        "full_transcript": state.transcript_so_far if state else "",
+                        "intent_progression": state.intent_progression if state else [],
+                    }))
+                    break
+
+            # Binary message — audio chunk
+            elif "bytes" in message:
+                audio_bytes = message["bytes"]
+                if not audio_bytes:
+                    continue
+
+                result = process_chunk(call_id, audio_bytes, vector_db)
+                result["type"] = "chunk_result"
+                await websocket.send_text(json.dumps(result))
+
+                # If alert threshold crossed, send a separate alert event
+                if result.get("alert"):
+                    await websocket.send_text(json.dumps({
+                        "type": "alert",
+                        "call_id": call_id,
+                        "score": result["current_score"],
+                        "message": "HIGH RISK SCAM DETECTED — Advise caller to hang up immediately",
+                        "intent_progression": result["intent_progression"],
+                    }))
+
+    except WebSocketDisconnect:
+        end_call(call_id)
+
+
+# ── Twilio Media Stream WebSocket ────────────────────────────────────────────
+# Frontend connects here to watch live scores
+_frontend_sockets: dict[str, WebSocket] = {}
+
+@app.websocket("/ws/dashboard/{call_id}")
+async def dashboard_ws(websocket: WebSocket, call_id: str):
+    """Frontend browser connects here to receive live score updates."""
+    await websocket.accept()
+    _frontend_sockets[call_id] = websocket
+    try:
+        while True:
+            await websocket.receive_text()  # keep alive
+    except WebSocketDisconnect:
+        _frontend_sockets.pop(call_id, None)
+
+
+@app.websocket("/ws/twilio-stream/{call_id}")
+async def twilio_stream_ws(websocket: WebSocket, call_id: str):
+    """
+    Twilio Media Streams connects here.
+    Configure this URL in Twilio console as the Stream URL.
+    Format: wss://your-ngrok-url/ws/twilio-stream/{call_id}
+    """
+    await websocket.accept()
+    vector_db = websocket.app.state.vector_db
+    frontend_ws = _frontend_sockets.get(call_id)
+    handler = get_or_create_handler(call_id, vector_db, frontend_ws)
+
+    try:
+        while True:
+            message = await websocket.receive_text()
+            result = await handler.handle_message(message)
+            if result:
+                print(f"[TWILIO STREAM] {call_id}: {result}")
+    except Exception as e:
+        print(f"[TWILIO STREAM ERROR] {call_id}: {e}")
+        remove_handler(call_id)
+        end_call(call_id)
+
+
+@app.post("/twilio/voice-webhook")
+async def twilio_voice_webhook(request: Request):
+    """
+    Twilio calls this HTTP endpoint when a call comes in.
+    Returns TwiML that forks audio to our WebSocket stream.
+    Set this as your Twilio phone number's Voice URL.
+    """
+    import os
+    from urllib.parse import urlencode
+
+    # Generate a unique call ID
+    call_id = str(uuid.uuid4())[:8]
+    ngrok_url = os.getenv("NGROK_URL", "").rstrip("/")
+
+    if not ngrok_url:
+        return {"error": "NGROK_URL not set in .env"}
+
+    stream_url = f"wss://{ngrok_url.replace('https://', '').replace('http://', '')}/ws/twilio-stream/{call_id}"
+
+    # TwiML response — tells Twilio to stream audio to us
+    twiml = f"""<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+    <Start>
+        <Stream url="{stream_url}" />
+    </Start>
+    <Say>This call is being monitored for fraud protection.</Say>
+    <Pause length="60"/>
+</Response>"""
+
+    from fastapi.responses import Response
+    return Response(content=twiml, media_type="application/xml")
 
 
 # ── Run ─────────────────────────────────────────────────────────────────────

@@ -98,8 +98,12 @@ class VectorDB:
     def __init__(self, persist_dir: str = "./chroma_db"):
         self.client = chromadb.PersistentClient(path=persist_dir)
         self.ef = embedding_functions.SentenceTransformerEmbeddingFunction(
-            model_name="all-MiniLM-L6-v2"
+            model_name="all-MiniLM-L6-v2",
+            device="cpu",
         )
+        import os
+        os.environ.setdefault("TRANSFORMERS_OFFLINE", "1")
+        os.environ.setdefault("HF_DATASETS_OFFLINE", "1")
         self.collection = self.client.get_or_create_collection(
             name="scam_templates",
             embedding_function=self.ef,
