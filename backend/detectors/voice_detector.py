@@ -20,7 +20,7 @@ import json
 import tempfile
 from typing import Dict, Any, List, Tuple
 
-import anthropic
+from groq import Groq
 
 from core.threat_score import ThreatScore
 from core.vector_db import VectorDB
@@ -229,10 +229,16 @@ def transcribe(audio_bytes: bytes, filename: str) -> str:
             tmp_path = tmp.name
         # base model for better accuracy on Indian-accented English + Hindi
         model = WhisperModel("base", device="cpu", compute_type="int8")
-        # language=None → auto-detect (handles Hindi, Hinglish, English)
-        segments, _ = model.transcribe(tmp_path, language=None)
+        # Try auto-detect first, then retry with Hindi if non-Latin script detected
+        segments_list, info = model.transcribe(tmp_path, language=None)
+        transcript = " ".join(s.text for s in segments_list)
+        # If detected language is Hindi/Urdu, re-transcribe with translate to English
+        # so keyword matching and NLP both work on readable text
+        if info.language in ("hi", "ur", "pa"):
+            segments_list, _ = model.transcribe(tmp_path, language=info.language, task="translate")
+            transcript = " ".join(s.text for s in segments_list)
         os.unlink(tmp_path)
-        return " ".join(s.text for s in segments)
+        return transcript
     except ImportError:
         pass
 
@@ -484,21 +490,28 @@ def nlp_on_transcript(transcript: str, vector_db: VectorDB = None) -> Tuple[floa
     # ── PII scrub before sending to Claude ─────────────────────────────────
     safe_transcript = scrub_pii(transcript[:1000])
 
-    # ── Claude Haiku intent classification ──────────────────────────────────
-    api_key = os.getenv("ANTHROPIC_API_KEY")
-    if api_key:
+    # ── Groq Llama intent classification ─────────────────────────────────────
+    groq_key = os.getenv("GROQ_API_KEY")
+    if groq_key:
         try:
-            client = anthropic.Anthropic(api_key=api_key)
-            resp = client.messages.create(
-                model="claude-haiku-4-5-20251001",
+            client = Groq(api_key=groq_key)
+            resp = client.chat.completions.create(
+                model="llama-3.3-70b-versatile",
                 max_tokens=200,
-                system=VOICE_NLP_SYSTEM,
-                messages=[{"role": "user", "content": f"Analyze this call transcript:\n\n{safe_transcript}"}],
+                messages=[
+                    {"role": "system", "content": VOICE_NLP_SYSTEM},
+                    {"role": "user", "content": f"Analyze this call transcript:\n\n{safe_transcript}"},
+                ],
             )
-            data = json.loads(resp.content[0].text)
-            if data.get("is_scam"):
-                nlp_score = float(data.get("confidence", 0))
-                score += min(30, nlp_score * 0.3)
+            raw = resp.choices[0].message.content.strip()
+            # Strip markdown code fences if present
+            if raw.startswith("```"):
+                raw = raw.split("\n", 1)[1] if "\n" in raw else raw[3:]
+                raw = raw.rsplit("```", 1)[0]
+            data = json.loads(raw)
+            nlp_score = float(data.get("confidence", 0))
+            if data.get("is_scam") or nlp_score > 30:
+                score += min(40, nlp_score * 0.5)
                 intent = data.get("intent", "unknown")
                 reasoning = data.get("reasoning", "")
                 reasons.append(f"[NLP] {intent.replace('_', ' ').title()}: {reasoning}")

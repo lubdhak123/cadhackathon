@@ -24,7 +24,7 @@ def test_video(file_path):
 # ── Run ──────────────────────────────────────────────────────────
 if __name__ == "__main__":
     # Default voice test
-    voice_file = r"C:\Users\kanis\OneDrive\Desktop\comeback hackathon\frontend\assets\feature-cards\WhatsApp Audio 2026-04-02 at 01.15.58.wav"
+    voice_file = r"C:\Users\kanis\OneDrive\Desktop\recordings\WhatsApp Audio 2026-04-02 at 00.56.22.wav"
     test_voice(voice_file)
 
     # Uncomment and set path to test video:
