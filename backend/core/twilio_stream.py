@@ -1,25 +1,15 @@
 """
 Twilio Media Streams Handler
 ─────────────────────────────
-Twilio sends audio as base64-encoded mulaw (G.711) chunks via WebSocket.
-This module:
-  1. Receives Twilio stream events
-  2. Decodes mulaw → PCM → WAV
-  3. Accumulates 5s worth of audio
-  4. Feeds into process_chunk() → RiskState
-  5. Pushes score updates to the frontend via a separate WebSocket
-
-Twilio stream message format:
-  {"event": "media", "media": {"payload": "<base64 mulaw>"}}
-  {"event": "start", "start": {"callSid": "...", "streamSid": "..."}}
-  {"event": "stop"}
+Fixes applied:
+  - Fix 2: Upsample mulaw 8kHz → 16kHz before Whisper (better accuracy)
+  - Fix 5: ABNORMAL_CLOSURE 1006 handled as normal call end, not error
 """
 
 import base64
 import audioop
 import io
 import json
-import struct
 import wave
 from typing import Dict
 
@@ -27,22 +17,28 @@ from core.live_call import process_chunk, end_call, get_or_create_call
 
 # Twilio sends mulaw 8kHz mono
 TWILIO_SAMPLE_RATE = 8000
+TARGET_SAMPLE_RATE = 16000  # Fix 3: Whisper trained on 16kHz
 TWILIO_CHANNELS = 1
 CHUNK_DURATION_SEC = 5
 SAMPLES_PER_CHUNK = TWILIO_SAMPLE_RATE * CHUNK_DURATION_SEC  # 40000 samples
 
 
 def mulaw_to_wav(mulaw_bytes: bytes) -> bytes:
-    """Convert raw mulaw bytes to WAV format (PCM 16-bit 8kHz mono)."""
-    # mulaw → linear PCM
-    pcm_bytes = audioop.ulaw2lin(mulaw_bytes, 2)  # 2 = 16-bit
+    """Convert raw mulaw bytes to WAV format (PCM 16-bit 16kHz mono).
+    Fix 3: Upsample from 8kHz → 16kHz for better Whisper accuracy.
+    """
+    # mulaw → linear PCM 16-bit at 8kHz
+    pcm_8k = audioop.ulaw2lin(mulaw_bytes, 2)
+
+    # Fix 3: Upsample 8kHz → 16kHz using audioop
+    pcm_16k, _ = audioop.ratecv(pcm_8k, 2, 1, TWILIO_SAMPLE_RATE, TARGET_SAMPLE_RATE, None)
 
     buf = io.BytesIO()
     with wave.open(buf, "wb") as wf:
         wf.setnchannels(TWILIO_CHANNELS)
         wf.setsampwidth(2)  # 16-bit
-        wf.setframerate(TWILIO_SAMPLE_RATE)
-        wf.writeframes(pcm_bytes)
+        wf.setframerate(TARGET_SAMPLE_RATE)
+        wf.writeframes(pcm_16k)
     return buf.getvalue()
 
 
@@ -55,15 +51,11 @@ class TwilioStreamHandler:
     def __init__(self, call_sid: str, vector_db=None, frontend_ws=None):
         self.call_sid = call_sid
         self.vector_db = vector_db
-        self.frontend_ws = frontend_ws  # WebSocket to push scores to browser
+        self.frontend_ws = frontend_ws
         self._mulaw_buffer: bytes = b""
         self._chunk_count = 0
 
     async def handle_message(self, raw: str) -> dict | None:
-        """
-        Process one Twilio WebSocket message.
-        Returns analysis result dict if a chunk was processed, else None.
-        """
         try:
             msg = json.loads(raw)
         except Exception:
@@ -85,21 +77,19 @@ class TwilioStreamHandler:
             mulaw_chunk = base64.b64decode(payload)
             self._mulaw_buffer += mulaw_chunk
 
-            # Fire analysis every 5 seconds worth of audio
-            bytes_per_sample = 1  # mulaw = 1 byte per sample
-            chunk_bytes = SAMPLES_PER_CHUNK * bytes_per_sample
+            chunk_bytes = SAMPLES_PER_CHUNK  # 1 byte per mulaw sample
 
             if len(self._mulaw_buffer) >= chunk_bytes:
                 chunk = self._mulaw_buffer[:chunk_bytes]
                 self._mulaw_buffer = self._mulaw_buffer[chunk_bytes:]
                 self._chunk_count += 1
 
+                # Fix 3: Convert with upsampling to 16kHz
                 wav_bytes = mulaw_to_wav(chunk)
                 result = process_chunk(self.call_sid, wav_bytes, self.vector_db)
                 result["type"] = "chunk_result"
                 result["chunk_number"] = self._chunk_count
 
-                # Push to frontend browser WebSocket if connected
                 if self.frontend_ws:
                     try:
                         await self.frontend_ws.send_text(json.dumps(result))

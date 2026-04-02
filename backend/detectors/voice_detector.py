@@ -94,10 +94,10 @@ def acoustic_analysis(audio_bytes: bytes, filename: str) -> Tuple[float, List[st
         if len(pitch_vals) > 0:
             pitch_std = float(pitch_vals.std())
             pitch_mean = float(pitch_vals[pitch_vals > 0].mean()) if (pitch_vals > 0).any() else 0
-            if pitch_std > 80:
+            if pitch_std > 150:  # phone audio calibrated (was 80 — too sensitive for GSM)
                 score += 15
                 reasons.append(f"High pitch variance ({pitch_std:.0f} Hz) – emotional agitation")
-            if pitch_mean > 300:
+            if pitch_mean > 500:  # phone audio calibrated (was 300)
                 score += 10
                 reasons.append(f"Elevated average pitch ({pitch_mean:.0f} Hz) – stress indicator")
 
@@ -105,7 +105,7 @@ def acoustic_analysis(audio_bytes: bytes, filename: str) -> Tuple[float, List[st
         onset_frames = librosa.onset.onset_detect(y=y, sr=sr)
         if duration > 0:
             syllable_rate = len(onset_frames) / duration
-            if syllable_rate > 6.0:
+            if syllable_rate > 7.5:  # phone audio calibrated (was 6.0 — too sensitive)
                 score += 10
                 reasons.append(f"High speaking rate ({syllable_rate:.1f} syllables/sec) – scripted call pattern")
 
@@ -558,25 +558,28 @@ def deepfake_detection(audio_bytes: bytes, filename: str) -> Tuple[float, List[s
         y, sr = preprocess_audio(y, sr)
 
         # Spectral flatness – AI voices are too spectrally smooth
+        # Phone audio (8kHz mulaw) is naturally flat — threshold raised significantly
         flatness = librosa.feature.spectral_flatness(y=y)[0]
         mean_flatness = float(flatness.mean())
-        if mean_flatness > 0.15:
+        if mean_flatness > 0.35:  # calibrated for phone audio (was 0.15 — caused false positives)
             score += 25
             reasons.append(
                 f"High spectral flatness ({mean_flatness:.3f}) – synthetic/cloned voice indicator"
             )
 
         # ZCR std – AI voices have unnaturally consistent zero-crossings
+        # Phone audio naturally has lower ZCR variation — threshold tightened
         zcr = librosa.feature.zero_crossing_rate(y)[0]
         zcr_std = float(zcr.std())
-        if zcr_std < 0.01:
+        if zcr_std < 0.005:  # calibrated for phone audio (was 0.01)
             score += 20
             reasons.append("Unnaturally consistent zero-crossing rate – deepfake marker")
 
         # MFCC variance – AI voices lack natural speech texture
+        # 8kHz audio has compressed MFCC naturally — threshold lowered
         mfccs = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=13)
         mfcc_var = float(mfccs.var(axis=1).mean())
-        if mfcc_var < 10:
+        if mfcc_var < 3:  # calibrated for phone audio (was 10 — flagged all phone calls)
             score += 20
             reasons.append(f"Low MFCC variance ({mfcc_var:.1f}) – lacks natural speech texture")
 
@@ -588,7 +591,7 @@ def deepfake_detection(audio_bytes: bytes, filename: str) -> Tuple[float, List[s
         f0_clean = f0[~np.isnan(f0)]
         if len(f0_clean) > 10:
             jitter = float(np.diff(f0_clean).std())
-            if jitter < 2.0:
+            if jitter < 0.5:  # calibrated for phone audio (was 2.0 — too sensitive on GSM)
                 score += 20
                 reasons.append(
                     f"Very low F0 jitter ({jitter:.2f} Hz) – unnaturally stable pitch "
@@ -596,10 +599,10 @@ def deepfake_detection(audio_bytes: bytes, filename: str) -> Tuple[float, List[s
                 )
 
         # Spectral envelope consistency — 3-second clones repeat spectral patterns
-        # Compute variance of spectral centroids over time windows
+        # Phone audio centroids naturally narrow due to 8kHz bandwidth limit
         spec_centroid = librosa.feature.spectral_centroid(y=y, sr=sr)[0]
         centroid_std = float(spec_centroid.std())
-        if centroid_std < 200 and len(spec_centroid) > 20:
+        if centroid_std < 80 and len(spec_centroid) > 20:  # calibrated (was 200 — wrong for phone)
             score += 15
             reasons.append(
                 f"Unnaturally consistent spectral envelope (std: {centroid_std:.0f} Hz) – "

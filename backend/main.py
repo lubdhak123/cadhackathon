@@ -354,8 +354,18 @@ async def twilio_stream_ws(websocket: WebSocket, call_id: str):
             result = await handler.handle_message(message)
             if result:
                 print(f"[TWILIO STREAM] {call_id}: {result}")
+    except WebSocketDisconnect:
+        # Fix 5: Normal call end — not an error
+        print(f"[TWILIO STREAM] {call_id}: call ended (WebSocket closed)")
+        remove_handler(call_id)
+        end_call(call_id)
     except Exception as e:
-        print(f"[TWILIO STREAM ERROR] {call_id}: {e}")
+        err = str(e)
+        # Fix 5: ABNORMAL_CLOSURE 1006 = Twilio hung up = normal
+        if "1006" in err or "ABNORMAL_CLOSURE" in err or "going away" in err.lower():
+            print(f"[TWILIO STREAM] {call_id}: call ended normally")
+        else:
+            print(f"[TWILIO STREAM ERROR] {call_id}: {e}")
         remove_handler(call_id)
         end_call(call_id)
 
