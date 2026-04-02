@@ -74,6 +74,12 @@ class RiskScorer:
                 reason = " | ".join(reasons)
             else:
                 reason = "URL appears safe based on all checks"
+
+                # After calculating weighted average, add this:
+        if findings.virustotal and findings.virustotal.detection_count >= 5:
+            threat_score = max(threat_score, 70)
+        if findings.virustotal and findings.virustotal.detection_count >= 10:
+            threat_score = max(threat_score, 85)
         
         return threat_score, reason
     

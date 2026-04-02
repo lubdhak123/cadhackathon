@@ -65,11 +65,16 @@ class PlaywrightScanner:
             response = await page.goto(url, timeout=timeout * 1000, wait_until="domcontentloaded")
             
             # Collect findings
+            try:
+                timing_val = response.timing["responseEnd"] if response else -1
+                response_time_ms = int(timing_val) if timing_val and timing_val > 0 else 0
+            except Exception:
+                response_time_ms = 0
+
             finding = PlaywrightFinding(
                 final_url=page.url,
-                response_time_ms=int(response.timing["responseEnd"]) if response else 0
+                response_time_ms=response_time_ms
             )
-            
             # Check for forms
             forms = await page.query_selector_all("form")
             login_form_count = 0
@@ -95,8 +100,8 @@ class PlaywrightScanner:
             for input_elem in all_inputs:
                 input_type = await input_elem.get_attribute("type")
                 if input_type and "password" in input_type.lower():
-                    finding.password_fields += 1
-            
+                    pass
+                                
             # Analyze scripts
             scripts = await page.query_selector_all("script")
             suspicious_script_count = 0

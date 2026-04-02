@@ -14,8 +14,8 @@ class VirusTotalFinding(BaseModel):
     detection_count: int
     undetected_count: int
     suspicious_count: int
-    latest_scan_date: Optional[str] = None
-    categories: Dict[str, str] = {}
+    latest_scan_date: Optional[Any] = None
+    categories: Optional[Dict[str, Any]] = None
     scan_id: Optional[str] = None
 
 class URLScanFinding(BaseModel):
@@ -29,7 +29,7 @@ class URLScanFinding(BaseModel):
     final_url: Optional[str] = None
     redirect_chain: List[str] = []
     ads: List[Dict[str, Any]] = []
-    matches: List[Dict[str, Any]] = []
+    matches: Optional[Any] = None
 
 class PlaywrightFinding(BaseModel):
     """Playwright browser analysis finding"""
