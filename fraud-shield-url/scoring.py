@@ -75,14 +75,13 @@ class RiskScorer:
             else:
                 reason = "URL appears safe based on all checks"
 
-                # After calculating weighted average, add this:
-        if findings.virustotal and findings.virustotal.detection_count >= 5:
-            threat_score = max(threat_score, 70)
+        # VT floor overrides - THIS MUST BE OUTSIDE THE ELSE
         if findings.virustotal and findings.virustotal.detection_count >= 10:
             threat_score = max(threat_score, 85)
+        elif findings.virustotal and findings.virustotal.detection_count >= 5:
+            threat_score = max(threat_score, 70)
         
         return threat_score, reason
-    
     def _score_virustotal(self, vt_finding) -> int:
         """Score VirusTotal findings (0-100)"""
         if not vt_finding:

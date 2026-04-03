@@ -45,12 +45,8 @@ class VirusTotalScanner:
             return None
     
     def _encode_url(self, url: str) -> str:
-        """Convert URL to VirusTotal format (base64 urlsafe encoding of url without scheme)"""
+        """Convert URL to VirusTotal format (base64 urlsafe encoding of full url)"""
         import base64
-        # Remove scheme
-        if "://" in url:
-            url = url.split("://", 1)[1]
-        # Encode to base64 url-safe
         encoded = base64.urlsafe_b64encode(url.encode()).decode().rstrip("=")
         return encoded
     

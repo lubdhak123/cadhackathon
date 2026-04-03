@@ -1,0 +1,29 @@
+# ============================================================
+# Fraud Shield AI — URL Sandbox  (Docker Compose)
+# ============================================================
+# Usage:
+#   1. Copy .env.example → .env and fill in your API keys
+#   2. docker compose up --build
+#   3. Test:
+#        Invoke-RestMethod -Uri "http://localhost:8000/scan-url" `
+#          -Method POST -ContentType "application/json" `
+#          -Body '{"url":"https://testsafebrowsing.appspot.com/s/phishing.html"}' |
+#          ConvertTo-Json -Depth 10
+# ============================================================
+
+services:
+  url-sandbox:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: fraud-shield-url
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      - HOST=0.0.0.0
+      - PORT=8000
+    restart: unless-stopped
+    # Chromium needs /dev/shm or it can OOM-crash on large pages
+    shm_size: "512mb"
