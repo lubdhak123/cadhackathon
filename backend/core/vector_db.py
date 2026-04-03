@@ -84,6 +84,16 @@ KNOWN_SCAMS = [
     "Hello sir, main Amazon delivery agent bol raha hoon. Aapka parcel customs mein atak gaya hai. Sirf Rs 1,500 ka customs duty bharna hoga. UPI pe bhej dijiye abhi.",
     "Aapne lucky draw jeeta hai. Ek crore rupaye aur ek car aapki prize hai. Claim karne ke liye apna bank account number aur Aadhaar details abhi WhatsApp karein is number pe.",
 
+    # ── Devanagari Script Scam Templates ─────────────────────────
+    "नमस्ते, मैं आपके बैंक की फ्रॉड टीम से बोल रहा हूं। आपके खाते में संदिग्ध लेनदेन हुआ है। खाता बंद होने से बचाने के लिए अभी अपना ओटीपी शेयर करें।",
+    "आपका सिम कार्ड अगले 2 घंटे में बंद हो जाएगा। ट्राई का नोटिस है। आधार नंबर और ओटीपी तुरंत शेयर करें वरना नंबर परमानेंट ब्लॉक हो जाएगा।",
+    "मैं सीबीआई अधिकारी बोल रहा हूं। आपके नाम पर अवैध पार्सल पकड़ा गया है। गिरफ्तारी से बचने के लिए अभी ₹50,000 ट्रांसफर करें और किसी को मत बताना।",
+    "आयकर विभाग से सूचना है। आपके खाते में कर बकाया है। दो घंटे में भुगतान न करने पर गिरफ्तारी वारंट जारी होगा। अभी इस नंबर पर कॉल करें।",
+    "बधाई हो! आपने लकी ड्रा में एक करोड़ रुपये और एक कार जीती है। क्लेम करने के लिए अपना आधार नंबर और बैंक खाता विवरण व्हाट्सएप करें।",
+    "आपका केवाईसी अपूर्ण है। 24 घंटे में अपडेट न करने पर आपका खाता ब्लॉक हो जाएगा। अभी आधार नंबर और ओटीपी शेयर करें।",
+    "मैं डिजिटल अरेस्ट की सूचना दे रहा हूं। आपका आधार नंबर मनी लॉन्ड्रिंग केस में लिंक पाया गया है। घर से बाहर मत जाइए और किसी को मत बताइए।",
+    "गूगल पे सपोर्ट से बोल रहा हूं। आपका यूपीआई आईडी 24 घंटे में बंद हो जाएगा। केवाईसी के लिए आधार नंबर और ओटीपी अभी शेयर करें।",
+
     # ── Voice Cloning — Family Emergency Impersonation ────────────
     "Mom it's me, I'm calling from a new number, I dropped my phone in water. I had a car accident and I'm at the police station. I need Rs 50,000 for bail right now. Please don't tell Dad yet, just transfer the money first.",
     "Dad this is your son. Please don't panic. I got into some trouble and I'm at the police station. My phone broke so I'm calling from a friend's number. I need bail money urgently, please send Rs 30,000 right now and don't tell anyone.",
